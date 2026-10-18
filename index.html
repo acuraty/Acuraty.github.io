@@ -106,7 +106,7 @@ body{background:#fff;padding:0}
 <div><label>Unidade</label><input id="unidade" value="psi"></div>
 <div><label>Fundo de escala</label><input id="fe" type="number" step="any" value="15000"></div>
 <div><label>Valor da divisão (resolução)</label><input id="divisao" type="number" step="any" value="200"></div>
-<div><label>Qtd. pontos</label><input id="numPontos" type="number" min="2" max="30" value="10"></div>
+<div><label>Qtd. pontos</label><input id="numPontos" type="number" min="2" max="50" value="10"></div>
 </div>
 <div class="row"><button type="button" class="gray" onclick="build()">Recriar tabela de pontos</button></div>
 </fieldset>
@@ -115,6 +115,7 @@ body{background:#fff;padding:0}
 <div><label>Procedimento</label><textarea id="procedimento" rows="7">A calibração foi realizada com o instrumento na sua posição de utilização, nas condições ambientais registradas neste certificado, permanecendo sob pressão máxima por aproximadamente 5 minutos para estabilização.
 
 O instrumento foi submetido a 2 (dois) ciclos de pressão, ascendentes e descendentes, por meio de bomba comparativa, e suas indicações foram comparadas às do padrão identificado neste certificado.</textarea></div>
+<div><label>Notas / Observações</label><textarea id="notas" rows="3" placeholder="N/C."></textarea></div>
 </div></fieldset>
 
 <fieldset><legend>5. Leituras (2 ciclos asc/desc)</legend>
@@ -226,7 +227,7 @@ async function loadImgs(){
 
 /* ---------- Formulário ---------- */
 function build(keep){
-  const fe=num($('fe').value),n=Math.min(30,Math.max(2,parseInt($('numPontos').value)||2));
+  const fe=num($('fe').value),n=Math.min(50,Math.max(2,parseInt($('numPontos').value)||2));
   const saved=Array.isArray(keep)?keep:[];
   $('pts').innerHTML='';
   for(let i=0;i<n;i++){
@@ -241,8 +242,11 @@ function coletar(){const d={};IDS.forEach(i=>d[i]=$(i).value);d.pts=lerPontos();
 function aplicar(d){IDS.forEach(i=>{if(d[i]!==undefined)$(i).value=d[i]});build(d.pts)}
 function rascunho(){try{localStorage.setItem(KEY,JSON.stringify(coletar()))}catch(e){}}
 function carregar(){
-  let d=null;try{d=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
-  if(d)aplicar(d);else{$('dataCal').value=new Date().toISOString().slice(0,10);build()}
+  let d=null;
+  try{d=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+  try{if(d)aplicar(d)}catch(e){console.error(e)}
+  if(!$('dataCal').value)$('dataCal').value=new Date().toISOString().slice(0,10);
+  if(!$('pts').rows.length)build();
 }
 function limpar(){if(confirm('Apagar o rascunho atual? (certificados salvos não serão apagados)')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}}
 IDS.forEach(i=>$(i).addEventListener('input',rascunho));
@@ -281,42 +285,45 @@ async function excluir(id){
 
 /* ---------- Cálculo ---------- */
 function gerar(){
-  const fe=num($('fe').value),div=num($('divisao').value),un=$('unidade').value;
-  if(fe<=0){alert('Informe um fundo de escala maior que zero.');return}
-  const uPad=num($('uPadrao').value)/(num($('kPadrao').value)||2);
-  const pts=lerPontos();
-  let mErr=0,mHist=0,mRep=0,mU=0,html='';
-  pts.forEach(([nom,a1,d1,a2,d2])=>{
-    const r=[a1,d1,a2,d2];
-    const err=Math.max(...r.map(x=>Math.abs(x-nom)));
-    const hist=Math.max(Math.abs(a1-d1),Math.abs(a2-d2));
-    const rep=Math.max(Math.abs(a1-a2),Math.abs(d1-d2));
-    const mean=r.reduce((a,b)=>a+b)/4;
-    const s=Math.sqrt(r.reduce((a,x)=>a+(x-mean)**2,0)/3);
-    const uc=Math.sqrt(uPad**2+(div/Math.sqrt(12))**2+(s/2)**2+(hist/Math.sqrt(12))**2);
-    const U=2*uc;
-    mErr=Math.max(mErr,err);mHist=Math.max(mHist,hist);mRep=Math.max(mRep,rep);mU=Math.max(mU,U);
-    html+=`<tr><td><b>${esc(nom)}</b></td>${r.map(v=>`<td>${esc(v)}</td>`).join('')}<td><b>${err.toFixed(2)}</b></td><td>${(err/fe*100).toFixed(2)}</td><td>± ${U.toFixed(2)}</td></tr>`;
-  });
-  const p=v=>(v/fe*100).toFixed(2),crit=num($('criterio').value);
-  const ok=(mErr/fe*100)<=crit;
-  const t=(id,v)=>$(id).textContent=v;
-  t('oLab',$('labNome').value);t('oNum',$('numCert').value);
-  t('oData',$('dataCal').value?new Date($('dataCal').value+'T12:00').toLocaleDateString('pt-BR'):'-');
-  t('oTemp',$('temp').value);t('oUmid',$('umid').value);
-  t('oCli',$('cliente').value);t('oTipo',$('tipoEq').value);t('oFab',$('fabricante').value);
-  t('oMod',$('modeloSerie').value);t('oTag',$('tag').value);t('oFaixa',`0 a ${fe} ${un}`);
-  t('oPad',$('padrao').value||'-');t('oCertPad',$('certPadrao').value||'-');
-  $('oTab').innerHTML=html;
-  t('oErro',p(mErr));t('oHist',p(mHist));t('oRep',p(mRep));
-  t('oU',mU.toFixed(2));t('oUp',p(mU));document.querySelector('.uni').textContent=un;
-  t('oCrit',crit);
-  $('oConf').className=ok?'ok':'nok';t('oConf',ok?'APROVADO':'REPROVADO');
-  t('oResp',$('resp').value||' ');t('oRod',$('labRodape').value);
-  t('oProc',$('procedimento').value.trim()||'-');t('oNotas',$('notas').value.trim()||'N/C.');
-  showImgs();
-  $('cert').classList.remove('hidden');
-  $('cert').scrollIntoView({behavior:'smooth'});
+  try{
+    if(!$('pts').rows.length)build();
+    const fe=num($('fe').value),div=num($('divisao').value),un=$('unidade').value;
+    if(fe<=0){alert('Informe um fundo de escala maior que zero.');return}
+    const uPad=num($('uPadrao').value)/(num($('kPadrao').value)||2);
+    const pts=lerPontos();
+    let mErr=0,mHist=0,mRep=0,mU=0,html='';
+    pts.forEach(([nom,a1,d1,a2,d2])=>{
+      const r=[a1,d1,a2,d2];
+      const err=Math.max(...r.map(x=>Math.abs(x-nom)));
+      const hist=Math.max(Math.abs(a1-d1),Math.abs(a2-d2));
+      const rep=Math.max(Math.abs(a1-a2),Math.abs(d1-d2));
+      const mean=r.reduce((a,b)=>a+b)/4;
+      const s=Math.sqrt(r.reduce((a,x)=>a+(x-mean)**2,0)/3);
+      const uc=Math.sqrt(uPad**2+(div/Math.sqrt(12))**2+(s/2)**2+(hist/Math.sqrt(12))**2);
+      const U=2*uc;
+      mErr=Math.max(mErr,err);mHist=Math.max(mHist,hist);mRep=Math.max(mRep,rep);mU=Math.max(mU,U);
+      html+=`<tr><td><b>${esc(nom)}</b></td>${r.map(v=>`<td>${esc(v)}</td>`).join('')}<td><b>${err.toFixed(2)}</b></td><td>${(err/fe*100).toFixed(2)}</td><td>± ${U.toFixed(2)}</td></tr>`;
+    });
+    const p=v=>(v/fe*100).toFixed(2),crit=num($('criterio').value);
+    const ok=(mErr/fe*100)<=crit;
+    const t=(id,v)=>$(id).textContent=v;
+    t('oLab',$('labNome').value);t('oNum',$('numCert').value);
+    t('oData',$('dataCal').value?new Date($('dataCal').value+'T12:00').toLocaleDateString('pt-BR'):'-');
+    t('oTemp',$('temp').value);t('oUmid',$('umid').value);
+    t('oCli',$('cliente').value);t('oTipo',$('tipoEq').value);t('oFab',$('fabricante').value);
+    t('oMod',$('modeloSerie').value);t('oTag',$('tag').value);t('oFaixa',`0 a ${fe} ${un}`);
+    t('oPad',$('padrao').value||'-');t('oCertPad',$('certPadrao').value||'-');
+    $('oTab').innerHTML=html;
+    t('oErro',p(mErr));t('oHist',p(mHist));t('oRep',p(mRep));
+    t('oU',mU.toFixed(2));t('oUp',p(mU));document.querySelector('.uni').textContent=un;
+    t('oCrit',crit);
+    $('oConf').className=ok?'ok':'nok';t('oConf',ok?'APROVADO':'REPROVADO');
+    t('oResp',$('resp').value||' ');t('oRod',$('labRodape').value);
+    t('oProc',$('procedimento').value.trim()||'-');t('oNotas',$('notas').value.trim()||'N/C.');
+    showImgs();
+    $('cert').classList.remove('hidden');
+    $('cert').scrollIntoView({behavior:'smooth'});
+  }catch(e){alert('Erro ao gerar o certificado: '+e.message);console.error(e)}
 }
 function pdf(){
   const old=document.title;
@@ -330,7 +337,9 @@ if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWor
 let ev;addEventListener('beforeinstallprompt',e=>{e.preventDefault();ev=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(ev){ev.prompt();ev=null;$('inst').style.display='none'}};
 
-carregar();loadImgs();listar();
+try{carregar()}catch(e){console.error(e);try{build()}catch(e2){console.error(e2)}}
+loadImgs().catch(console.error);
+listar().catch(console.error);
 </script>
 </body>
 </html>
