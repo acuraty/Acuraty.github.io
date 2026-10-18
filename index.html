@@ -50,7 +50,13 @@ button.sm{padding:5px 10px;font-size:.75rem}
 ul#lista{list-style:none;margin:8px 0 0;padding:0;max-height:220px;overflow:auto}
 #lista li{display:flex;gap:8px;align-items:center;padding:6px;border-bottom:1px solid #e2e8f0;font-size:.85rem}
 #lista li span{flex:1}
-@media print{body{background:#fff;padding:0}.np,form,header{display:none!important}.cert{box-shadow:none}}
+@page{size:A4;margin:10mm}
+@media print{
+body{background:#fff;padding:0}
+.np,form,header{display:none!important}
+.cert{box-shadow:none;padding:0;margin:0}
+.box,tr{break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -161,7 +167,6 @@ O instrumento foi submetido a pressões em 2 (dois) CICLOS ascendentes e descend
 </section>
 </div>
 
-<script src="html2pdf.bundle.min.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';document.head.appendChild(s)"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -316,11 +321,10 @@ function gerar(){
   $('cert').scrollIntoView({behavior:'smooth'});
 }
 function pdf(){
-  if(typeof html2pdf==='undefined'){alert('Biblioteca de PDF não carregada. Conecte-se à internet uma vez ou envie html2pdf.bundle.min.js ao repositório.');return}
-  html2pdf().set({margin:8,filename:`Certificado_${($('numCert').value||'calibracao').replace(/[\/\\]/g,'-')}.pdf`,
-    html2canvas:{scale:2,scrollX:0,scrollY:-window.scrollY,useCORS:true,backgroundColor:'#ffffff'},
-    pagebreak:{mode:['css','legacy'],avoid:['.box','tr']},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from($('cert')).save();
+  const old=document.title;
+  document.title='Certificado_'+(($('numCert').value||'calibracao').replace(/[\/\\]/g,'-'));
+  window.print();
+  setTimeout(()=>{document.title=old},1500);
 }
 
 /* ---------- PWA ---------- */
