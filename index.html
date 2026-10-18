@@ -20,7 +20,9 @@ fieldset{border:1px solid #e2e8f0;border-radius:8px;margin:0 0 14px;padding:12px
 legend{font-weight:700;color:#1e40af;padding:0 6px}
 .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
 label{font-size:.7rem;font-weight:700;text-transform:uppercase;color:#64748b;display:block}
-input{width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem}
+input,textarea{width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem}
+textarea{font-family:inherit;resize:vertical}
+.pre{white-space:pre-wrap;margin:4px 0 0}
 .tw{overflow:auto;max-height:340px}
 table{border-collapse:collapse;width:100%;font-size:.8rem;text-align:center}
 th,td{border:1px solid #cbd5e1;padding:3px}
@@ -103,7 +105,14 @@ ul#lista{list-style:none;margin:8px 0 0;padding:0;max-height:220px;overflow:auto
 <div class="row"><button type="button" class="gray" onclick="build()">Recriar tabela de pontos</button></div>
 </fieldset>
 
-<fieldset><legend>4. Leituras (2 ciclos asc/desc)</legend>
+<fieldset><legend>4. Procedimento e notas</legend><div class="g" style="grid-template-columns:1fr">
+<div><label>Procedimento</label><textarea id="procedimento" rows="7">A calibração foi realizada com o instrumento na sua posição de utilização, a uma temperatura de 20 ºC ± 2 ºC, umidade relativa de 50% ± 20%, permanecendo sob pressão máxima durante ± 5 minutos para estabilidade e equilíbrio dos parâmetros ambientais.
+
+O instrumento foi submetido a pressões em 2 (dois) CICLOS ascendentes e descendentes através de uma bomba comparativa, e seus valores comparados a um manômetro padrão classe 0,25 %. Validade da calibração do padrão utilizado até __/__/____.</textarea></div>
+<div><label>Notas / Observações</label><textarea id="notas" rows="3" placeholder="N/C."></textarea></div>
+</div></fieldset>
+
+<fieldset><legend>5. Leituras (2 ciclos asc/desc)</legend>
 <div class="tw"><table><thead><tr><th>Nominal</th><th>1º Asc</th><th>1º Desc</th><th>2º Asc</th><th>2º Desc</th></tr></thead>
 <tbody id="pts"></tbody></table></div></fieldset>
 
@@ -140,6 +149,8 @@ ul#lista{list-style:none;margin:8px 0 0;padding:0;max-height:220px;overflow:auto
 <p>Resultado: <span id="oConf"></span></p></div>
 </div>
 <p class="small">Incerteza expandida conforme GUM: combina padrão, resolução, repetitividade e histerese, com k=2 (≈95%). Resultados válidos apenas para o item calibrado, nas condições indicadas.</p>
+<div class="box"><b>Procedimento:</b><p class="pre" id="oProc"></p></div>
+<div class="box"><b>Notas:</b><p class="pre" id="oNotas"></p></div>
 <div class="signw"><img id="oAssin" alt="Assinatura"><div class="sign"><span id="oResp"></span><br><span class="small">Responsável técnico</span></div></div>
 <p class="small" id="oRod" style="text-align:center;margin-top:16px"></p>
 
@@ -155,7 +166,7 @@ ul#lista{list-style:none;margin:8px 0 0;padding:0;max-height:220px;overflow:auto
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?0:n};
-const IDS=['labNome','labRodape','resp','tipoEq','fabricante','modeloSerie','tag','cliente','numCert','dataCal','padrao','certPadrao','uPadrao','kPadrao','temp','umid','criterio','unidade','fe','divisao','numPontos'];
+const IDS=['labNome','labRodape','resp','tipoEq','fabricante','modeloSerie','tag','cliente','numCert','dataCal','padrao','certPadrao','uPadrao','kPadrao','temp','umid','criterio','unidade','fe','divisao','numPontos','procedimento','notas'];
 const KEY='calib-draft-v2';
 let currentId=null, IMGS={logo:'',assin:''};
 
@@ -216,7 +227,7 @@ function build(keep){
   const saved=Array.isArray(keep)?keep:[];
   $('pts').innerHTML='';
   for(let i=0;i<n;i++){
-    const nom=+(i*fe/(n-1)).toFixed(2);
+    const nom=+(i*fe/(n-1)).toFixed(6);
     const row=saved[i]||[nom,nom,nom,nom,nom];
     $('pts').insertAdjacentHTML('beforeend','<tr>'+row.map(v=>`<td><input type="number" step="any" value="${esc(v)}" oninput="rascunho()"></td>`).join('')+'</tr>');
   }
@@ -299,6 +310,7 @@ function gerar(){
   t('oCrit',crit);
   $('oConf').className=ok?'ok':'nok';t('oConf',ok?'APROVADO':'REPROVADO');
   t('oResp',$('resp').value||' ');t('oRod',$('labRodape').value);
+  t('oProc',$('procedimento').value.trim()||'-');t('oNotas',$('notas').value.trim()||'N/C.');
   showImgs();
   $('cert').classList.remove('hidden');
   $('cert').scrollIntoView({behavior:'smooth'});
@@ -306,7 +318,9 @@ function gerar(){
 function pdf(){
   if(typeof html2pdf==='undefined'){alert('Biblioteca de PDF não carregada. Conecte-se à internet uma vez ou envie html2pdf.bundle.min.js ao repositório.');return}
   html2pdf().set({margin:8,filename:`Certificado_${($('numCert').value||'calibracao').replace(/[\/\\]/g,'-')}.pdf`,
-    html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from($('cert')).save();
+    html2canvas:{scale:2,scrollX:0,scrollY:-window.scrollY,useCORS:true,backgroundColor:'#ffffff'},
+    pagebreak:{mode:['css','legacy'],avoid:['.box','tr']},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from($('cert')).save();
 }
 
 /* ---------- PWA ---------- */
