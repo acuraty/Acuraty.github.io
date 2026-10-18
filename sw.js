@@ -1,12 +1,10 @@
-const CACHE = 'calib-v4';
+const CACHE = 'calib-v5';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
-  './icon.svg', './icon-192.png', './icon-512.png',
-  './html2pdf.bundle.min.js'
+  './icon.svg', './icon-192.png', './icon-512.png'
 ];
 
 self.addEventListener('install', e => {
-  // adiciona um a um: se algum arquivo faltar, os demais continuam
   e.waitUntil(
     caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => {}))))
   );
