@@ -170,7 +170,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?0:n};
 const IDS=['labNome','labRodape','resp','tipoEq','fabricante','modeloSerie','tag','cliente','numCert','dataCal','padrao','certPadrao','uPadrao','kPadrao','temp','umid','criterio','unidade','fe','divisao','numPontos','procedimento','notas'];
-const KEY='calib-draft-v2';
+const KEY='calib-draft-v3';
 let currentId=null, IMGS={logo:'',assin:''};
 
 /* ---------- IndexedDB ---------- */
