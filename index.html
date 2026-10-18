@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d4ed8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Certificados de Calibração</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Arial,sans-serif;background:#f1f5f9;color:#1e293b;padding:12px}
+.wrap{max-width:900px;margin:auto}
+header{background:#1d4ed8;color:#fff;padding:18px;border-radius:12px 12px 0 0;text-align:center}
+header h1{margin:0;font-size:1.3rem}
+form,.cert{background:#fff;padding:18px;box-shadow:0 2px 8px #0002}
+form{border-radius:0 0 12px 12px}
+fieldset{border:1px solid #e2e8f0;border-radius:8px;margin:0 0 14px;padding:12px}
+legend{font-weight:700;color:#1e40af;padding:0 6px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+label{font-size:.7rem;font-weight:700;text-transform:uppercase;color:#64748b;display:block}
+input{width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem}
+.tw{overflow:auto;max-height:340px}
+table{border-collapse:collapse;width:100%;font-size:.8rem;text-align:center}
+th,td{border:1px solid #cbd5e1;padding:3px}
+th{background:#e2e8f0;position:sticky;top:0}
+button{border:0;border-radius:8px;padding:11px 16px;font-weight:700;color:#fff;cursor:pointer;background:#2563eb}
+button.sm{padding:5px 10px;font-size:.75rem}
+.row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.row button{flex:1}
+.green{background:#16a34a}.gray{background:#475569}.red{background:#dc2626}
+.cert{margin-top:16px;border-radius:12px;font-size:.8rem}
+.cert.hidden{display:none}
+.cert h2{margin:0;font-size:1.1rem}
+.cert .top{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:2px solid #1d4ed8;padding-bottom:8px;margin-bottom:12px}
+.cert .brand{display:flex;align-items:center;gap:12px}
+#oLogo{max-height:60px;max-width:140px;display:none}
+.box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:12px}
+.box p{margin:3px 0}
+.ok{color:#15803d;font-weight:700}.nok{color:#b91c1c;font-weight:700}
+.signw{margin-top:30px;text-align:center;width:260px}
+#oAssin{max-height:60px;max-width:240px;display:none;margin:0 auto}
+.sign{border-top:1px solid #000;padding-top:4px}
+.small{font-size:.7rem;color:#64748b}
+.thumb{max-height:50px;max-width:140px;margin-top:6px;display:none;border:1px dashed #cbd5e1;padding:2px}
+#inst{display:none}
+ul#lista{list-style:none;margin:8px 0 0;padding:0;max-height:220px;overflow:auto}
+#lista li{display:flex;gap:8px;align-items:center;padding:6px;border-bottom:1px solid #e2e8f0;font-size:.85rem}
+#lista li span{flex:1}
+@media print{body{background:#fff;padding:0}.np,form,header{display:none!important}.cert{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="np"><h1>Sistema de Calibração & Emissão de Certificados</h1></header>
+
+<form id="f" class="np" onsubmit="return false">
+
+<fieldset><legend>Certificados salvos</legend>
+<div class="row" style="margin-top:0">
+<button type="button" class="green" onclick="salvarCert()">💾 Salvar este certificado</button>
+<button type="button" class="gray" onclick="novoCert()">➕ Novo</button>
+</div>
+<p class="small" id="status"></p>
+<ul id="lista"></ul>
+</fieldset>
+
+<fieldset><legend>0. Laboratório</legend><div class="g">
+<div><label>Laboratório / Empresa</label><input id="labNome" value="LTGI - Comércio e Manutenção de Equipamentos"></div>
+<div><label>CNPJ / Endereço (rodapé)</label><input id="labRodape" value="CNPJ: 08.828.622/0001-14 - Rio de Janeiro - RJ"></div>
+<div><label>Responsável técnico</label><input id="resp"></div>
+<div><label>Logo (imagem)</label><input type="file" accept="image/*" id="fLogo"><img id="tLogo" class="thumb" alt=""><button type="button" class="sm red" onclick="rmImg('logo')">Remover</button></div>
+<div><label>Assinatura (imagem)</label><input type="file" accept="image/*" id="fAssin"><img id="tAssin" class="thumb" alt=""><button type="button" class="sm red" onclick="rmImg('assin')">Remover</button></div>
+</div></fieldset>
+
+<fieldset><legend>1. Instrumento & Cliente</legend><div class="g">
+<div><label>Tipo de equipamento</label><input id="tipoEq" value="Manômetro Analógico"></div>
+<div><label>Fabricante</label><input id="fabricante" value="WIKA / Famabras"></div>
+<div><label>Modelo / N.º série</label><input id="modeloSerie" value="Mod. N/C - S/N: N/C"></div>
+<div><label>TAG</label><input id="tag" value="TAG-01"></div>
+<div><label>Cliente</label><input id="cliente" value="Óleo Hidráulica Comércio e Indústria Ltda."></div>
+<div><label>N.º certificado</label><input id="numCert" value="PI 0490/2026"></div>
+<div><label>Data da calibração</label><input id="dataCal" type="date"></div>
+</div></fieldset>
+
+<fieldset><legend>2. Padrão, ambiente e critério</legend><div class="g">
+<div><label>Padrão utilizado</label><input id="padrao" placeholder="Ex: Calibrador de pressão XYZ"></div>
+<div><label>Certificado do padrão</label><input id="certPadrao"></div>
+<div><label>U do padrão (mesma unidade)</label><input id="uPadrao" type="number" step="any" value="0"></div>
+<div><label>k do padrão</label><input id="kPadrao" type="number" step="any" value="2"></div>
+<div><label>Temperatura (°C)</label><input id="temp" value="23"></div>
+<div><label>Umidade (%UR)</label><input id="umid" value="50"></div>
+<div><label>Critério aceitação (% F.E.)</label><input id="criterio" type="number" step="any" value="1"></div>
+</div></fieldset>
+
+<fieldset><legend>3. Grandeza e escala</legend><div class="g">
+<div><label>Unidade</label><input id="unidade" value="psi"></div>
+<div><label>Fundo de escala</label><input id="fe" type="number" step="any" value="15000"></div>
+<div><label>Valor da divisão (resolução)</label><input id="divisao" type="number" step="any" value="200"></div>
+<div><label>Qtd. pontos</label><input id="numPontos" type="number" min="2" max="30" value="10"></div>
+</div>
+<div class="row"><button type="button" class="gray" onclick="build()">Recriar tabela de pontos</button></div>
+</fieldset>
+
+<fieldset><legend>4. Leituras (2 ciclos asc/desc)</legend>
+<div class="tw"><table><thead><tr><th>Nominal</th><th>1º Asc</th><th>1º Desc</th><th>2º Asc</th><th>2º Desc</th></tr></thead>
+<tbody id="pts"></tbody></table></div></fieldset>
+
+<div class="row">
+<button type="button" onclick="gerar()">⚡ Calcular e gerar certificado</button>
+<button type="button" class="red" onclick="limpar()">Limpar rascunho</button>
+<button type="button" id="inst">📲 Instalar app</button>
+</div>
+</form>
+
+<section id="cert" class="cert hidden">
+<div class="top">
+<div class="brand"><img id="oLogo" alt="Logo"><div><h2 id="oLab"></h2><b>CERTIFICADO DE CALIBRAÇÃO</b><br><b id="oNum" style="color:#1d4ed8"></b></div></div>
+<div style="text-align:right">Data: <b id="oData"></b><br>Temp.: <span id="oTemp"></span> °C · UR: <span id="oUmid"></span> %</div></div>
+
+<div class="box" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div><p><b>Cliente:</b> <span id="oCli"></span></p><p><b>Instrumento:</b> <span id="oTipo"></span></p><p><b>Fabricante:</b> <span id="oFab"></span></p></div>
+<div><p><b>Modelo/Série:</b> <span id="oMod"></span></p><p><b>TAG:</b> <span id="oTag"></span></p><p><b>Faixa:</b> <span id="oFaixa"></span></p></div>
+</div>
+<div class="box"><p><b>Padrão:</b> <span id="oPad"></span> — <b>Cert.:</b> <span id="oCertPad"></span></p></div>
+
+<b>Resultados</b>
+<table style="margin:6px 0 12px"><thead><tr><th>Nominal</th><th>1º Asc</th><th>1º Desc</th><th>2º Asc</th><th>2º Desc</th><th>Erro máx.</th><th>Erro (% F.E.)</th><th>U (k=2)</th></tr></thead>
+<tbody id="oTab"></tbody></table>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="box"><b>Desempenho</b>
+<p>Erro fiducial máx.: <b id="oErro"></b> %</p>
+<p>Histerese máx.: <b id="oHist"></b> %</p>
+<p>Repetitividade máx.: <b id="oRep"></b> %</p></div>
+<div class="box"><b>Incerteza e conformidade</b>
+<p>U máx. (k=2): ± <b id="oU"></b> <span class="uni"></span> (<span id="oUp"></span> % F.E.)</p>
+<p>Critério: ≤ <span id="oCrit"></span> % F.E.</p>
+<p>Resultado: <span id="oConf"></span></p></div>
+</div>
+<p class="small">Incerteza expandida conforme GUM: combina padrão, resolução, repetitividade e histerese, com k=2 (≈95%). Resultados válidos apenas para o item calibrado, nas condições indicadas.</p>
+<div class="signw"><img id="oAssin" alt="Assinatura"><div class="sign"><span id="oResp"></span><br><span class="small">Responsável técnico</span></div></div>
+<p class="small" id="oRod" style="text-align:center;margin-top:16px"></p>
+
+<div class="row np">
+<button class="green" onclick="pdf()">📄 Baixar PDF</button>
+<button class="gray" onclick="window.print()">🖨️ Imprimir</button>
+</div>
+</section>
+</div>
+
+<script src="html2pdf.bundle.min.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';document.head.appendChild(s)"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?0:n};
+const IDS=['labNome','labRodape','resp','tipoEq','fabricante','modeloSerie','tag','cliente','numCert','dataCal','padrao','certPadrao','uPadrao','kPadrao','temp','umid','criterio','unidade','fe','divisao','numPontos'];
+const KEY='calib-draft-v2';
+let currentId=null, IMGS={logo:'',assin:''};
+
+/* ---------- IndexedDB ---------- */
+const dbp=new Promise((res,rej)=>{
+  const r=indexedDB.open('calib-db',1);
+  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('certs',{keyPath:'id',autoIncrement:true});d.createObjectStore('cfg')};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+});
+async function tx(store,mode,fn){
+  const d=await dbp;
+  return new Promise((res,rej)=>{
+    const t=d.transaction(store,mode),q=fn(t.objectStore(store));
+    t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);
+  });
+}
+const status=m=>{$('status').textContent=m};
+
+/* ---------- Imagens (logo / assinatura) ---------- */
+function toDataURL(file,max){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const im=new Image();
+      im.onload=()=>{
+        const k=Math.min(1,max/im.width),c=document.createElement('canvas');
+        c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+        c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+        res(c.toDataURL('image/png'));
+      };
+      im.onerror=rej;im.src=fr.result;
+    };
+    fr.onerror=rej;fr.readAsDataURL(file);
+  });
+}
+function showImgs(){
+  [['logo','tLogo','oLogo'],['assin','tAssin','oAssin']].forEach(([k,t,o])=>{
+    [t,o].forEach(id=>{const e=$(id);if(IMGS[k]){e.src=IMGS[k];e.style.display='block'}else{e.removeAttribute('src');e.style.display='none'}});
+  });
+}
+async function setImg(k,file){
+  if(!file)return;
+  IMGS[k]=await toDataURL(file,k==='logo'?400:500);
+  await tx('cfg','readwrite',s=>s.put(IMGS[k],k));showImgs();
+}
+async function rmImg(k){IMGS[k]='';await tx('cfg','readwrite',s=>s.delete(k));showImgs()}
+$('fLogo').onchange=e=>setImg('logo',e.target.files[0]);
+$('fAssin').onchange=e=>setImg('assin',e.target.files[0]);
+async function loadImgs(){
+  IMGS.logo=(await tx('cfg','readonly',s=>s.get('logo')))||'';
+  IMGS.assin=(await tx('cfg','readonly',s=>s.get('assin')))||'';
+  showImgs();
+}
+
+/* ---------- Formulário ---------- */
+function build(keep){
+  const fe=num($('fe').value),n=Math.min(30,Math.max(2,parseInt($('numPontos').value)||2));
+  const saved=Array.isArray(keep)?keep:[];
+  $('pts').innerHTML='';
+  for(let i=0;i<n;i++){
+    const nom=+(i*fe/(n-1)).toFixed(6);
+    const row=saved[i]||[nom,nom,nom,nom,nom];
+    $('pts').insertAdjacentHTML('beforeend','<tr>'+row.map(v=>`<td><input type="number" step="any" value="${esc(v)}" oninput="rascunho()"></td>`).join('')+'</tr>');
+  }
+  rascunho();
+}
+const lerPontos=()=>[...$('pts').rows].map(r=>[...r.querySelectorAll('input')].map(i=>num(i.value)));
+function coletar(){const d={};IDS.forEach(i=>d[i]=$(i).value);d.pts=lerPontos();return d}
+function aplicar(d){IDS.forEach(i=>{if(d[i]!==undefined)$(i).value=d[i]});build(d.pts)}
+function rascunho(){try{localStorage.setItem(KEY,JSON.stringify(coletar()))}catch(e){}}
+function carregar(){
+  let d=null;try{d=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+  if(d)aplicar(d);else{$('dataCal').value=new Date().toISOString().slice(0,10);build()}
+}
+function limpar(){if(confirm('Apagar o rascunho atual? (certificados salvos não serão apagados)')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}}
+IDS.forEach(i=>$(i).addEventListener('input',rascunho));
+
+/* ---------- Certificados salvos ---------- */
+async function salvarCert(){
+  const d=coletar();
+  const rec={num:d.numCert,cliente:d.cliente,data:d.dataCal,ts:Date.now(),d};
+  if(currentId!==null)rec.id=currentId;
+  currentId=await tx('certs','readwrite',s=>s.put(rec));
+  status('Salvo: '+rec.num);listar();
+}
+function novoCert(){currentId=null;status('Novo certificado (altere o N.º antes de salvar).');$('cert').classList.add('hidden')}
+async function listar(){
+  const all=(await tx('certs','readonly',s=>s.getAll())||[]).sort((a,b)=>b.ts-a.ts);
+  const ul=$('lista');ul.innerHTML='';
+  if(!all.length){ul.innerHTML='<li class="small">Nenhum certificado salvo.</li>';return}
+  all.forEach(r=>{
+    const li=document.createElement('li'),sp=document.createElement('span');
+    sp.textContent=`${r.num} — ${r.cliente} — ${r.data||''}${r.id===currentId?' ✔':''}`;
+    const a=document.createElement('button'),x=document.createElement('button');
+    a.type=x.type='button';a.className='sm';x.className='sm red';a.textContent='Abrir';x.textContent='Excluir';
+    a.onclick=()=>abrir(r.id);x.onclick=()=>excluir(r.id);
+    li.append(sp,a,x);ul.append(li);
+  });
+}
+async function abrir(id){
+  const r=await tx('certs','readonly',s=>s.get(id));if(!r)return;
+  currentId=id;aplicar(r.d);gerar();status('Aberto: '+r.num);listar();
+}
+async function excluir(id){
+  if(!confirm('Excluir este certificado?'))return;
+  await tx('certs','readwrite',s=>s.delete(id));
+  if(currentId===id)currentId=null;listar();
+}
+
+/* ---------- Cálculo ---------- */
+function gerar(){
+  const fe=num($('fe').value),div=num($('divisao').value),un=$('unidade').value;
+  if(fe<=0){alert('Informe um fundo de escala maior que zero.');return}
+  const uPad=num($('uPadrao').value)/(num($('kPadrao').value)||2);
+  const pts=lerPontos();
+  let mErr=0,mHist=0,mRep=0,mU=0,html='';
+  pts.forEach(([nom,a1,d1,a2,d2])=>{
+    const r=[a1,d1,a2,d2];
+    const err=Math.max(...r.map(x=>Math.abs(x-nom)));
+    const hist=Math.max(Math.abs(a1-d1),Math.abs(a2-d2));
+    const rep=Math.max(Math.abs(a1-a2),Math.abs(d1-d2));
+    const mean=r.reduce((a,b)=>a+b)/4;
+    const s=Math.sqrt(r.reduce((a,x)=>a+(x-mean)**2,0)/3);
+    const uc=Math.sqrt(uPad**2+(div/Math.sqrt(12))**2+(s/2)**2+(hist/Math.sqrt(12))**2);
+    const U=2*uc;
+    mErr=Math.max(mErr,err);mHist=Math.max(mHist,hist);mRep=Math.max(mRep,rep);mU=Math.max(mU,U);
+    html+=`<tr><td><b>${esc(nom)}</b></td>${r.map(v=>`<td>${esc(v)}</td>`).join('')}<td><b>${err.toFixed(2)}</b></td><td>${(err/fe*100).toFixed(2)}</td><td>± ${U.toFixed(2)}</td></tr>`;
+  });
+  const p=v=>(v/fe*100).toFixed(2),crit=num($('criterio').value);
+  const ok=(mErr/fe*100)<=crit;
+  const t=(id,v)=>$(id).textContent=v;
+  t('oLab',$('labNome').value);t('oNum',$('numCert').value);
+  t('oData',$('dataCal').value?new Date($('dataCal').value+'T12:00').toLocaleDateString('pt-BR'):'-');
+  t('oTemp',$('temp').value);t('oUmid',$('umid').value);
+  t('oCli',$('cliente').value);t('oTipo',$('tipoEq').value);t('oFab',$('fabricante').value);
+  t('oMod',$('modeloSerie').value);t('oTag',$('tag').value);t('oFaixa',`0 a ${fe} ${un}`);
+  t('oPad',$('padrao').value||'-');t('oCertPad',$('certPadrao').value||'-');
+  $('oTab').innerHTML=html;
+  t('oErro',p(mErr));t('oHist',p(mHist));t('oRep',p(mRep));
+  t('oU',mU.toFixed(2));t('oUp',p(mU));document.querySelector('.uni').textContent=un;
+  t('oCrit',crit);
+  $('oConf').className=ok?'ok':'nok';t('oConf',ok?'APROVADO':'REPROVADO');
+  t('oResp',$('resp').value||' ');t('oRod',$('labRodape').value);
+  showImgs();
+  $('cert').classList.remove('hidden');
+  $('cert').scrollIntoView({behavior:'smooth'});
+}
+function pdf(){
+  if(typeof html2pdf==='undefined'){alert('Biblioteca de PDF não carregada. Conecte-se à internet uma vez ou envie html2pdf.bundle.min.js ao repositório.');return}
+  html2pdf().set({margin:8,filename:`Certificado_${($('numCert').value||'calibracao').replace(/[\/\\]/g,'-')}.pdf`,
+    html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from($('cert')).save();
+}
+
+/* ---------- PWA ---------- */
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+let ev;addEventListener('beforeinstallprompt',e=>{e.preventDefault();ev=e;$('inst').style.display='block'});
+$('inst').onclick=async()=>{if(ev){ev.prompt();ev=null;$('inst').style.display='none'}};
+
+carregar();loadImgs();listar();
+</script>
+</body>
+</html>
