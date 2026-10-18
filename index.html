@@ -227,7 +227,7 @@ function build(keep){
   const saved=Array.isArray(keep)?keep:[];
   $('pts').innerHTML='';
   for(let i=0;i<n;i++){
-    const nom=+(i*fe/(n-1)).toFixed(6);
+    const nom=+(i*fe/(n-1)).toFixed(2);
     const row=saved[i]||[nom,nom,nom,nom,nom];
     $('pts').insertAdjacentHTML('beforeend','<tr>'+row.map(v=>`<td><input type="number" step="any" value="${esc(v)}" oninput="rascunho()"></td>`).join('')+'</tr>');
   }
